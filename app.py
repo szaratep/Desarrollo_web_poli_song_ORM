@@ -296,6 +296,8 @@ app = create_app()
 if __name__ == "__main__":
     app.run(debug=True)
 
+#prueba de comentario 
+
 # #codigo de ejemplo profesor
 #     # -------- Compras (CRUD) --------
 #     @app.post("/api/users/<int:user_id>/compras")

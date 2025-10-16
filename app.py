@@ -198,6 +198,7 @@ def create_app():
     def get_correo(correo):
         c = Correo.query.get_or_404(correo)
         return jsonify(c.to_dict())
+    #comentari de prueba
 
     @app.patch("/api/correos/<string:correo>")
     def update_correo(correo):

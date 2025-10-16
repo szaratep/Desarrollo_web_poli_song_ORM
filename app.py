@@ -291,6 +291,84 @@ def create_app():
     
     return app
 
+    @app.post("/api/discomp3")
+    def create_discomp3():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        if not isinstance(data, list) or len(data) == 0:
+            return jsonify(error="Debe enviar al menos un registro JSON"), 400
+
+        discos= []
+        for i, item in enumerate(data, start=1):
+            nombre = item.get("nombre")
+            duracion = item.get("duracion")
+            tamano = item.get("tamano")
+            precio = item.get("precio")
+            id_item = item.get("id_item")
+
+            # Validar campos obligatorios (no nulos)
+            if not all([nombre, duracion, tamano, precio, id_item]):
+                return jsonify(
+                   error=f"El registro #{i} no tiene todos los campos requeridos ('nombre', 'duracion', 'tamano', 'precio', 'id_item')"
+                ), 400
+
+            discos.append(
+                DiscoMp3(nombre=nombre, duracion=duracion, tamano=tamano,precio=precio,id_item=id_item)
+            )
+
+        try:
+            db.session.add_all(discos)
+            db.session.commit()
+            return jsonify([v.to_dict() for v in discos]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar el discomp3: {str(e)}"), 500
+
+    @app.get("/api/discomp3")
+    def list_discos():
+        vals = DiscoMp3.query.all()
+        return jsonify([v.to_dict() for v in vals])    
+    
+    @app.get("/api/discomp3/<int:id_discoMp3>")
+    def get_discomp3(id_discoMp3):
+        d = DiscoMp3.query.get_or_404(id_discoMp3)
+        return jsonify(d.to_dict())
+    
+    @app.patch("/api/discomp3/<int:id_discoMp3>")
+    def update_discomp3(id_discoMp3):
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+        d = DiscoMp3.query.get_or_404(id_discoMp3)
+        data = request.get_json() or {}
+        if "nombre" in data and data["nombre"]:
+            d.nombre = data["nombre"]
+        if "duracion" in data and data["duracion"]:
+            d.duracion = data["duracion"]
+        if "tamano" in data and data["tamano"]:
+            d.tamano = data["tamano"]
+        if "precio" in data and data["precio"]:
+            d.precio=data["precio"]
+        if "id_item" in data and data["id_item"]:
+            d.id_item=data["id_item"]
+        db.session.commit()
+        return jsonify(d.to_dict())
+
+    @app.delete("/api/discomp3/<int:id_discoMp3>")
+    def delete_discomp3(id_discoMp3):
+        d = DiscoMp3.query.get_or_404(id_discoMp3)
+        db.session.delete(d)
+        db.session.commit()
+        return jsonify(ok=True)
+    
+        
+
+    
+
 app = create_app()
 
 if __name__ == "__main__":

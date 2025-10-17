@@ -367,6 +367,197 @@ def create_app():
         db.session.commit()
         return jsonify(ok=True)
     
+       
+# =====================================================
+#                 VINILO CRUD
+# =====================================================
+    
+
+    @app.post("/api/vinilo")
+    def create_vinilo():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        if not isinstance(data, list) or len(data) == 0:
+            return jsonify(error="Debe enviar al menos un registro JSON"), 400
+
+        vinilos = []
+        for i, item in enumerate(data, start=1):
+            nombre = item.get("nombre")
+            artista = item.get("artista")
+            anio_salida = item.get("anio_salida")
+            precio_unitario = item.get("precio_unitario")
+            id_cancion = item.get("id_cancion")
+            id_proveedor = item.get("id_proveedor")
+            id_item = item.get("id_item")
+
+            # Validar campos obligatorios
+            if not all([nombre, artista, anio_salida, precio_unitario, id_cancion, id_proveedor, id_item]):
+                return jsonify(
+                    error=f"El registro #{i} no tiene todos los campos requeridos ('nombre', 'artista', 'anio_salida', 'precio_unitario', 'id_cancion', 'id_proveedor', 'id_item')"
+                ), 400
+
+            vinilos.append(
+                Vinilo(
+                    nombre=nombre,
+                    artista=artista,
+                    anio_salida=anio_salida,
+                    precio_unitario=precio_unitario,
+                    id_cancion=id_cancion,
+                    id_proveedor=id_proveedor,
+                    id_item=id_item
+                )
+            )
+
+        try:
+            db.session.add_all(vinilos)
+            db.session.commit()
+            return jsonify([v.to_dict() for v in vinilos]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar el vinilo: {str(e)}"), 500
+
+
+    @app.get("/api/vinilo")
+    def list_vinilos():
+        vals = Vinilo.query.all()
+        return jsonify([v.to_dict() for v in vals])
+
+
+    @app.get("/api/vinilo/<int:id_vinilo>")
+    def get_vinilo(id_vinilo):
+        v = Vinilo.query.get_or_404(id_vinilo)
+        return jsonify(v.to_dict())
+
+
+    @app.patch("/api/vinilo/<int:id_vinilo>")
+    def update_vinilo(id_vinilo):
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        v = Vinilo.query.get_or_404(id_vinilo)
+        data = request.get_json() or {}
+
+        if "nombre" in data and data["nombre"]:
+            v.nombre = data["nombre"]
+        if "artista" in data and data["artista"]:
+            v.artista = data["artista"]
+        if "anio_salida" in data and data["anio_salida"]:
+            v.anio_salida = data["anio_salida"]
+        if "precio_unitario" in data and data["precio_unitario"]:
+            v.precio_unitario = data["precio_unitario"]
+        if "id_cancion" in data and data["id_cancion"]:
+            v.id_cancion = data["id_cancion"]
+        if "id_proveedor" in data and data["id_proveedor"]:
+            v.id_proveedor = data["id_proveedor"]
+        if "id_item" in data and data["id_item"]:
+            v.id_item = data["id_item"]
+
+        db.session.commit()
+        return jsonify(v.to_dict())
+
+
+    @app.delete("/api/vinilo/<int:id_vinilo>")
+    def delete_vinilo(id_vinilo):
+        v = Vinilo.query.get_or_404(id_vinilo)
+        db.session.delete(v)
+        db.session.commit()
+        return jsonify(ok=True)
+
+    # --------------------------
+    # CRUD PEDIDO
+    # --------------------------
+    @app.post("/api/pedido")
+    def create_pedido():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        if not isinstance(data, list) or len(data) == 0:
+            return jsonify(error="Debe enviar al menos un registro JSON"), 400
+
+        pedidos = []
+        for i, item in enumerate(data, start=1):
+            id_us = item.get("id_us")
+            fecha_pedido = item.get("fecha_pedido")
+            estado = item.get("estado")
+            medio_pago = item.get("medio_pago")
+            id_item = item.get("id_item")
+
+            # Validar campos obligatorios
+            if not all([id_us, fecha_pedido, estado, medio_pago, id_item]):
+                return jsonify(
+                    error=f"El registro #{i} no tiene todos los campos requeridos ('id_us', 'fecha_pedido', 'estado', 'medio_pago', 'id_item')"
+                ), 400
+
+            pedidos.append(
+                Pedido(
+                    id_us=id_us,
+                    fecha_pedido=fecha_pedido,
+                    estado=estado,
+                    medio_pago=medio_pago,
+                    id_item=id_item
+                )
+            )
+
+        try:
+            db.session.add_all(pedidos)
+            db.session.commit()
+            return jsonify([p.to_dict() for p in pedidos]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar el pedido: {str(e)}"), 500
+
+
+    @app.get("/api/pedido")
+    def list_pedidos():
+        vals = Pedido.query.all()
+        return jsonify([p.to_dict() for p in vals])
+
+
+    @app.get("/api/pedido/<int:id_pedido>")
+    def get_pedido(id_pedido):
+        p = Pedido.query.get_or_404(id_pedido)
+        return jsonify(p.to_dict())
+
+
+    @app.patch("/api/pedido/<int:id_pedido>")
+    def update_pedido(id_pedido):
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        p = Pedido.query.get_or_404(id_pedido)
+        data = request.get_json() or {}
+
+        if "id_us" in data and data["id_us"]:
+            p.id_us = data["id_us"]
+        if "fecha_pedido" in data and data["fecha_pedido"]:
+            p.fecha_pedido = data["fecha_pedido"]
+        if "estado" in data and data["estado"]:
+            p.estado = data["estado"]
+        if "medio_pago" in data and data["medio_pago"]:
+            p.medio_pago = data["medio_pago"]
+        if "id_item" in data and data["id_item"]:
+            p.id_item = data["id_item"]
+
+        db.session.commit()
+        return jsonify(p.to_dict())
+
+
+    @app.delete("/api/pedido/<int:id_pedido>")
+    def delete_pedido(id_pedido):
+        p = Pedido.query.get_or_404(id_pedido)
+        db.session.delete(p)
+        db.session.commit()
+        return jsonify(ok=True)
+    
     # =====================================================
     #              DISCO MP3 - CANCIÓN CRUD
     # =====================================================
@@ -558,6 +749,7 @@ def create_app():
         db.session.delete(r)
         db.session.commit()
         return jsonify(ok=True)
+ 
     
 
 

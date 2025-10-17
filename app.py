@@ -288,7 +288,11 @@ def create_app():
         db.session.delete(v)
         db.session.commit()
         return jsonify(ok=True)
-    
+
+
+    # =====================================================
+    #                  DiscoMp3 CRUD
+    # =====================================================
     @app.post("/api/discomp3")
     def create_discomp3():
         if not request.is_json:

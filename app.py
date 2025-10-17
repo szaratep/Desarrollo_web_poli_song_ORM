@@ -3,6 +3,8 @@ from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from db import db
 from models import *
+from datetime import datetime
+from datetime import datetime
 
 def create_app():
     app = Flask(__name__)
@@ -305,7 +307,7 @@ def create_app():
         if not isinstance(data, list) or len(data) == 0:
             return jsonify(error="Debe enviar al menos un registro JSON"), 400
 
-        discos= []
+        discos = []
         for i, item in enumerate(data, start=1):
             nombre = item.get("nombre")
             duracion = item.get("duracion")
@@ -313,14 +315,27 @@ def create_app():
             precio = item.get("precio")
             id_item = item.get("id_item")
 
-            # Validar campos obligatorios (no nulos)
+            # Validar campos obligatorios
             if not all([nombre, duracion, tamano, precio, id_item]):
                 return jsonify(
-                   error=f"El registro #{i} no tiene todos los campos requeridos ('nombre', 'duracion', 'tamano', 'precio', 'id_item')"
+                    error=f"El registro #{i} no tiene todos los campos requeridos ('nombre', 'duracion', 'tamano', 'precio', 'id_item')"
                 ), 400
 
+            # 🔹 Conversión de cadena a objeto time
+            try:
+                if isinstance(duracion, str):
+                    duracion = datetime.strptime(duracion, "%H:%M:%S").time()
+            except ValueError:
+                return jsonify(error=f"Formato de duración inválido en el registro #{i}. Usa el formato HH:MM:SS"), 400
+
             discos.append(
-                DiscoMp3(nombre=nombre, duracion=duracion, tamano=tamano,precio=precio,id_item=id_item)
+                DiscoMp3(
+                    nombre=nombre,
+                    duracion=duracion,
+                    tamano=tamano,
+                    precio=precio,
+                    id_item=id_item,
+                )
             )
 
         try:
@@ -497,6 +512,13 @@ def create_app():
                     error=f"El registro #{i} no tiene todos los campos requeridos ('id_us', 'fecha_pedido', 'estado', 'medio_pago', 'id_item')"
                 ), 400
 
+            # 🔹 Convertir la fecha (string → datetime.date)
+            try:
+                if isinstance(fecha_pedido, str):
+                    fecha_pedido = datetime.strptime(fecha_pedido, "%Y-%m-%d").date()
+            except ValueError:
+                return jsonify(error=f"Formato de fecha inválido en el registro #{i}. Use 'YYYY-MM-DD'"), 400
+
             pedidos.append(
                 Pedido(
                     id_us=id_us,
@@ -514,7 +536,6 @@ def create_app():
         except Exception as e:
             db.session.rollback()
             return jsonify(error=f"Error al insertar el pedido: {str(e)}"), 500
-
 
     @app.get("/api/pedido")
     def list_pedidos():
@@ -935,64 +956,4 @@ app = create_app()
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-#prueba de comentario 
-
-# #codigo de ejemplo profesor
-#     # -------- Compras (CRUD) --------
-#     @app.post("/api/users/<int:user_id>/compras")
-#     def create_compra(user_id):
-#         if not request.is_json:
-#             return jsonify(error="Se requiere JSON"), 415
-#         User.query.get_or_404(user_id)
-#         data = request.get_json() or {}
-#         if not all(k in data for k in ("item", "cantidad", "valor")):
-#             return jsonify(error="Campos 'item', 'cantidad', 'valor' son obligatorios"), 400
-#         c = Compra(
-#             item=data["item"],
-#             cantidad=int(data["cantidad"]),
-#             valor=float(data["valor"]),
-#             user_id=user_id,
-#         )
-#         db.session.add(c)
-#         db.session.commit()
-#         return jsonify(c.to_dict()), 201
-
-#     @app.get("/api/compras")
-#     def list_compras():
-#         items = Compra.query.order_by(Compra.id.desc()).all()
-#         return jsonify([c.to_dict() for c in items])
-
-#     @app.get("/api/users/<int:user_id>/compras")
-#     def list_compras_by_user(user_id):
-#         User.query.get_or_404(user_id)
-#         items = Compra.query.filter_by(user_id=user_id).order_by(Compra.id.desc()).all()
-#         return jsonify([c.to_dict() for c in items])
-
-#     @app.get("/api/compras/<int:compra_id>")
-#     def get_compra(compra_id):
-#         c = Compra.query.get_or_404(compra_id)
-#         return jsonify(c.to_dict())
-
-#     @app.patch("/api/compras/<int:compra_id>")
-#     def update_compra(compra_id):
-#         if not request.is_json:
-#             return jsonify(error="Se requiere JSON"), 415
-#         c = Compra.query.get_or_404(compra_id)
-#         data = request.get_json() or {}
-#         if "item" in data and data["item"]:
-#             c.item = data["item"]
-#         if "cantidad" in data and data["cantidad"] is not None:
-#             c.cantidad = int(data["cantidad"])
-#         if "valor" in data and data["valor"] is not None:
-#             c.valor = float(data["valor"])
-#         db.session.commit()
-#         return jsonify(c.to_dict())
-
-#     @app.delete("/api/compras/<int:compra_id>")
-#     def delete_compra(compra_id):
-#         c = Compra.query.get_or_404(compra_id)
-#         db.session.delete(c)
-#         db.session.commit()
-#         return jsonify(ok=True)
 

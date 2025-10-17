@@ -367,10 +367,201 @@ def create_app():
         db.session.commit()
         return jsonify(ok=True)
     
-        
+        # =====================================================
+    #              DISCO MP3 - CANCIÓN CRUD
+    # =====================================================
+    @app.post("/api/discomp3cancion")
+    def create_discomp3cancion():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
 
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        relaciones = []
+        for i, item in enumerate(data, start=1):
+            id_discoMp3 = item.get("id_discoMp3")
+            id_cancion = item.get("id_cancion")
+
+            if not id_discoMp3 or not id_cancion:
+                return jsonify(error=f"El registro #{i} no tiene los campos requeridos ('id_discoMp3', 'id_cancion')"), 400
+
+            relaciones.append(DiscoMp3Cancion(id_discoMp3=id_discoMp3, id_cancion=id_cancion))
+
+        try:
+            db.session.add_all(relaciones)
+            db.session.commit()
+            return jsonify([{"id_discoMp3": r.id_discoMp3, "id_cancion": r.id_cancion} for r in relaciones]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar DiscoMp3-Canción: {str(e)}"), 500
+
+    @app.get("/api/discomp3cancion")
+    def list_discomp3cancion():
+        relaciones = DiscoMp3Cancion.query.all()
+        return jsonify([{"id_discoMp3": r.id_discoMp3, "id_cancion": r.id_cancion} for r in relaciones])
+
+    @app.delete("/api/discomp3cancion/<int:id_discoMp3>/<int:id_cancion>")
+    def delete_discomp3cancion(id_discoMp3, id_cancion):
+        r = DiscoMp3Cancion.query.get_or_404((id_discoMp3, id_cancion))
+        db.session.delete(r)
+        db.session.commit()
+        return jsonify(ok=True)
+
+
+    # =====================================================
+    #                     ITEMS CRUD
+    # =====================================================
+    @app.post("/api/items")
+    def create_items():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        items = []
+        for i, item in enumerate(data, start=1):
+            tipo_item = item.get("tipo_item")
+            cantidad = item.get("cantidad")
+
+            if not tipo_item or cantidad is None:
+                return jsonify(error=f"El registro #{i} no tiene los campos requeridos ('tipo_item', 'cantidad')"), 400
+
+            items.append(Item(tipo_item=tipo_item, cantidad=cantidad))
+
+        try:
+            db.session.add_all(items)
+            db.session.commit()
+            return jsonify([i.to_dict() for i in items]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar items: {str(e)}"), 500
+
+    @app.get("/api/items")
+    def list_items():
+        items = Item.query.all()
+        return jsonify([i.to_dict() for i in items])
+
+    @app.get("/api/items/<int:id>")
+    def get_item(id):
+        i = Item.query.get_or_404(id)
+        return jsonify(i.to_dict())
+
+    @app.patch("/api/items/<int:id>")
+    def update_item(id):
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        i = Item.query.get_or_404(id)
+        data = request.get_json() or {}
+
+        if "tipo_item" in data and data["tipo_item"]:
+            i.tipo_item = data["tipo_item"]
+        if "cantidad" in data and data["cantidad"] is not None:
+            i.cantidad = data["cantidad"]
+
+        db.session.commit()
+        return jsonify(i.to_dict())
+
+    @app.delete("/api/items/<int:id>")
+    def delete_item(id):
+        i = Item.query.get_or_404(id)
+        db.session.delete(i)
+        db.session.commit()
+        return jsonify(ok=True)
+
+
+    # =====================================================
+    #              RECOPILACIÓN - CANCIÓN CRUD
+    # =====================================================
+    @app.post("/api/recopilacioncancion")
+    def create_recopilacioncancion():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        relaciones = []
+        for i, item in enumerate(data, start=1):
+            id_recopilacion = item.get("id_recopilacion")
+            id_cancion = item.get("id_cancion")
+
+            if not id_recopilacion or not id_cancion:
+                return jsonify(error=f"El registro #{i} no tiene los campos requeridos ('id_recopilacion', 'id_cancion')"), 400
+
+            relaciones.append(RecopilacionCancion(id_recopilacion=id_recopilacion, id_cancion=id_cancion))
+
+        try:
+            db.session.add_all(relaciones)
+            db.session.commit()
+            return jsonify([{"id_recopilacion": r.id_recopilacion, "id_cancion": r.id_cancion} for r in relaciones]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar Recopilación-Canción: {str(e)}"), 500
+
+    @app.get("/api/recopilacioncancion")
+    def list_recopilacioncancion():
+        relaciones = RecopilacionCancion.query.all()
+        return jsonify([{"id_recopilacion": r.id_recopilacion, "id_cancion": r.id_cancion} for r in relaciones])
+
+    @app.delete("/api/recopilacioncancion/<int:id_recopilacion>/<int:id_cancion>")
+    def delete_recopilacioncancion(id_recopilacion, id_cancion):
+        r = RecopilacionCancion.query.get_or_404((id_recopilacion, id_cancion))
+        db.session.delete(r)
+        db.session.commit()
+        return jsonify(ok=True)
+
+
+    # =====================================================
+    #                 VINILO - CANCIÓN CRUD
+    # =====================================================
+    @app.post("/api/vinilocancion")
+    def create_vinilocancion():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        relaciones = []
+        for i, item in enumerate(data, start=1):
+            id_vinilo = item.get("id_vinilo")
+            id_cancion = item.get("id_cancion")
+
+            if not id_vinilo or not id_cancion:
+                return jsonify(error=f"El registro #{i} no tiene los campos requeridos ('id_vinilo', 'id_cancion')"), 400
+
+            relaciones.append(ViniloCancion(id_vinilo=id_vinilo, id_cancion=id_cancion))
+
+        try:
+            db.session.add_all(relaciones)
+            db.session.commit()
+            return jsonify([{"id_vinilo": r.id_vinilo, "id_cancion": r.id_cancion} for r in relaciones]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar Vinilo-Canción: {str(e)}"), 500
+
+    @app.get("/api/vinilocancion")
+    def list_vinilocancion():
+        relaciones = ViniloCancion.query.all()
+        return jsonify([{"id_vinilo": r.id_vinilo, "id_cancion": r.id_cancion} for r in relaciones])
+
+    @app.delete("/api/vinilocancion/<int:id_vinilo>/<int:id_cancion>")
+    def delete_vinilocancion(id_vinilo, id_cancion):
+        r = ViniloCancion.query.get_or_404((id_vinilo, id_cancion))
+        db.session.delete(r)
+        db.session.commit()
+        return jsonify(ok=True)
     
 
+
+    
 app = create_app()
 
 if __name__ == "__main__":

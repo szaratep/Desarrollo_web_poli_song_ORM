@@ -950,6 +950,176 @@ def create_app():
         db.session.commit()
         return jsonify(ok=True)
     
+    # =====================================================
+    #             RECOPILACION CRUD
+    # =====================================================
+    @app.post("/api/recopilaciones")
+    def create_recopilaciones():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        if not isinstance(data, list) or len(data) == 0:
+            return jsonify(error="Debe enviar al menos un registro JSON"), 400
+
+        recopilaciones = []
+        for i, item in enumerate(data, start=1):
+            nombre = item.get("nombre")
+            id_us = item.get("id_us")
+            publica = item.get("publica")
+
+            if nombre is None or id_us is None or publica is None:
+                return jsonify(error=f"Registro #{i} incompleto ('nombre', 'id_us', 'publica')"), 400
+
+            recopilaciones.append(
+                Recopilacion(nombre=nombre, id_us=id_us, publica=publica)
+            )
+
+        try:
+            db.session.add_all(recopilaciones)
+            db.session.commit()
+            return jsonify([r.to_dict() for r in recopilaciones]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar recopilaciones: {str(e)}"), 500
+
+
+    @app.get("/api/recopilaciones")
+    def get_recopilaciones():
+        return jsonify([r.to_dict() for r in Recopilacion.query.all()])
+
+
+    @app.get("/api/recopilaciones/<int:id>")
+    def get_recopilacion(id):
+        recopilacion = Recopilacion.query.get(id)
+        if not recopilacion:
+            return jsonify(error="Recopilación no encontrada"), 404
+        return jsonify(recopilacion.to_dict())
+
+
+    @app.put("/api/recopilaciones/<int:id>")
+    def update_recopilacion(id):
+        recopilacion = Recopilacion.query.get(id)
+        if not recopilacion:
+            return jsonify(error="Recopilación no encontrada"), 404
+
+        data = request.get_json()
+        recopilacion.nombre = data.get("nombre", recopilacion.nombre)
+        recopilacion.id_us = data.get("id_us", recopilacion.id_us)
+        recopilacion.publica = data.get("publica", recopilacion.publica)
+
+        try:
+            db.session.commit()
+            return jsonify(recopilacion.to_dict())
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al actualizar recopilación: {str(e)}"), 500
+
+
+    @app.delete("/api/recopilaciones/<int:id>")
+    def delete_recopilacion(id):
+        recopilacion = Recopilacion.query.get(id)
+        if not recopilacion:
+            return jsonify(error="Recopilación no encontrada"), 404
+
+        try:
+            db.session.delete(recopilacion)
+            db.session.commit()
+            return jsonify(message=f"Recopilación {id} eliminada"), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al eliminar recopilación: {str(e)}"), 500
+        
+    # =====================================================
+    #             CANCION - CRUD
+    # =====================================================
+    @app.post("/api/canciones")
+    def create_canciones():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+
+        # Aceptar un solo objeto o lista
+        if isinstance(data, dict):
+            data = [data]
+
+        if not isinstance(data, list) or len(data) == 0:
+            return jsonify(error="Debe enviar al menos un registro en formato JSON"), 400
+
+        canciones_creadas = []
+
+        for i, item in enumerate(data, start=1):
+            nombre = item.get("nombre")
+            duracion = item.get("duracion")
+            tamano = item.get("tamano")
+
+            if not nombre or not duracion or tamano is None:
+                return jsonify(
+                    error=f"El registro #{i} no tiene todos los campos requeridos ('nombre', 'duracion', 'tamano')"
+                ), 400
+
+            # 🔧 Conversión de cadena a objeto time
+            try:
+                duracion_time = datetime.strptime(duracion, "%H:%M:%S").time()
+            except ValueError:
+                return jsonify(
+                    error=f"El formato de duración en el registro #{i} debe ser HH:MM:SS (por ejemplo '00:03:45')"
+                ), 400
+
+            c = Cancion(nombre=nombre, duracion=duracion_time, tamano=tamano)
+            canciones_creadas.append(c)
+
+        try:
+            db.session.add_all(canciones_creadas)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar en la base de datos: {str(e)}"), 500
+
+        return jsonify([c.to_dict() for c in canciones_creadas]), 201
+
+    @app.get("/api/canciones")
+    def list_canciones():
+        canciones = Cancion.query.order_by(Cancion.id_cancion.desc()).all()
+        return jsonify([c.to_dict() for c in canciones])
+
+
+    @app.get("/api/canciones/<int:id_cancion>")
+    def get_cancion(id_cancion):
+        c = Cancion.query.get_or_404(id_cancion)
+        return jsonify(c.to_dict())
+
+
+    @app.patch("/api/canciones/<int:id_cancion>")
+    def update_cancion(id_cancion):
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        c = Cancion.query.get_or_404(id_cancion)
+        data = request.get_json() or {}
+
+        if "nombre" in data and data["nombre"]:
+            c.nombre = data["nombre"]
+        if "duracion" in data and data["duracion"]:
+            c.duracion = data["duracion"]
+        if "tamano" in data and data["tamano"] is not None:
+            c.tamano = data["tamano"]
+
+        db.session.commit()
+        return jsonify(c.to_dict())
+
+
+    @app.delete("/api/canciones/<int:id_cancion>")
+    def delete_cancion(id_cancion):
+        c = Cancion.query.get_or_404(id_cancion)
+        db.session.delete(c)
+        db.session.commit()
+        return jsonify(ok=True)
+
     return app
       
 app = create_app()

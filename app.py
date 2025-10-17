@@ -289,9 +289,6 @@ def create_app():
         db.session.commit()
         return jsonify(ok=True)
     
-    
-    return app
-
     @app.post("/api/discomp3")
     def create_discomp3():
         if not request.is_json:

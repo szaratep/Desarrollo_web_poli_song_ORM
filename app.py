@@ -788,9 +788,9 @@ def create_app():
         proveedores = []
         for i, item in enumerate(data, start=1):
             nombre = item.get("nombre")
-        if not nombre:
-            return jsonify(error=f"El registro #{i} no tiene el campo requerido ('nombre')"), 400
-        proveedores.append(Proveedor(nombre=nombre))
+            if not nombre:
+             return jsonify(error=f"El registro #{i} no tiene el campo requerido ('nombre')"), 400
+            proveedores.append(Proveedor(nombre=nombre))
 
         try:
             db.session.add_all(proveedores)

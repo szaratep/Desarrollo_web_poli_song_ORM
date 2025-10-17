@@ -929,12 +929,8 @@ def create_app():
         db.session.commit()
         return jsonify(ok=True)
     
-
- 
-    
-
-
-    
+    return app
+      
 app = create_app()
 
 if __name__ == "__main__":

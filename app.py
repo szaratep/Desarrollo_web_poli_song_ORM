@@ -749,6 +749,187 @@ def create_app():
         db.session.delete(r)
         db.session.commit()
         return jsonify(ok=True)
+    # =====================================================
+    #                  PROVEEDOR CRUD
+    # =====================================================
+    @app.post("/api/proveedores")
+    def create_proveedores():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        if not isinstance(data, list) or len(data) == 0:
+            return jsonify(error="Debe enviar al menos un registro JSON"), 400
+
+        proveedores = []
+        for i, item in enumerate(data, start=1):
+            nombre = item.get("nombre")
+        if not nombre:
+            return jsonify(error=f"El registro #{i} no tiene el campo requerido ('nombre')"), 400
+        proveedores.append(Proveedor(nombre=nombre))
+
+        try:
+            db.session.add_all(proveedores)
+            db.session.commit()
+            return jsonify([p.to_dict() for p in proveedores]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar proveedores: {str(e)}"), 500
+
+
+    @app.get("/api/proveedores")
+    def list_proveedores():
+        proveedores = Proveedor.query.all()
+        return jsonify([p.to_dict() for p in proveedores])
+
+
+    @app.get("/api/proveedores/<int:id>")
+    def get_proveedor(id):
+        p = Proveedor.query.get_or_404(id)
+        return jsonify(p.to_dict())
+
+
+    @app.patch("/api/proveedores/<int:id>")
+    def update_proveedor(id):
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+        p = Proveedor.query.get_or_404(id)
+        data = request.get_json() or {}
+        if "nombre" in data and data["nombre"]:
+            p.nombre = data["nombre"]
+        db.session.commit()
+        return jsonify(p.to_dict())
+
+
+    @app.delete("/api/proveedores/<int:id>")
+    def delete_proveedor(id):
+        p = Proveedor.query.get_or_404(id)
+        db.session.delete(p)
+        db.session.commit()
+        return jsonify(ok=True)
+    # =====================================================
+    #              CORREO - PROVEEDOR CRUD
+    # =====================================================
+    @app.post("/api/correos_proveedor")
+    def create_correos_proveedor():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        correos = []
+        for i, item in enumerate(data, start=1):
+            correo = item.get("correo")
+            id_proveedor = item.get("id_proveedor")
+            if not correo or not id_proveedor:
+                return jsonify(error=f"El registro #{i} no tiene los campos requeridos ('correo', 'id_proveedor')"), 400
+            correos.append(CorreoProveedor(correo=correo, id_proveedor=id_proveedor))
+
+        try:
+            db.session.add_all(correos)
+            db.session.commit()
+            return jsonify([c.to_dict() for c in correos]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar correos_proveedor: {str(e)}"), 500
+
+
+    @app.get("/api/correos_proveedor")
+    def list_correos_proveedor():
+        correos = CorreoProveedor.query.all()
+        return jsonify([c.to_dict() for c in correos])
+
+
+    @app.get("/api/correos_proveedor/<string:correo>")
+    def get_correo_proveedor(correo):
+        c = CorreoProveedor.query.get_or_404(correo)
+        return jsonify(c.to_dict())
+
+
+    @app.patch("/api/correos_proveedor/<string:correo>")
+    def update_correo_proveedor(correo):
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+        c = CorreoProveedor.query.get_or_404(correo)
+        data = request.get_json() or {}
+        if "id_proveedor" in data and data["id_proveedor"]:
+            c.id_proveedor = data["id_proveedor"]
+        db.session.commit()
+        return jsonify(c.to_dict())
+
+
+    @app.delete("/api/correos_proveedor/<string:correo>")
+    def delete_correo_proveedor(correo):
+        c = CorreoProveedor.query.get_or_404(correo)
+        db.session.delete(c)
+        db.session.commit()
+        return jsonify(ok=True)
+    # =====================================================
+    #             TELEFONO - PROVEEDOR CRUD
+    # =====================================================
+    @app.post("/api/telefonos_proveedor")
+    def create_telefonos_proveedor():
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+
+        data = request.get_json()
+        if isinstance(data, dict):
+            data = [data]
+
+        telefonos = []
+        for i, item in enumerate(data, start=1):
+            telefono = item.get("telefono")
+            id_proveedor = item.get("id_proveedor")
+            if not telefono or not id_proveedor:
+                return jsonify(error=f"El registro #{i} no tiene los campos requeridos ('telefono', 'id_proveedor')"), 400
+            telefonos.append(TelefonoProveedor(telefono=telefono, id_proveedor=id_proveedor))
+
+        try:
+            db.session.add_all(telefonos)
+            db.session.commit()
+            return jsonify([t.to_dict() for t in telefonos]), 201
+        except Exception as e:
+            db.session.rollback()
+            return jsonify(error=f"Error al insertar telefonos_proveedor: {str(e)}"), 500
+
+
+    @app.get("/api/telefonos_proveedor")
+    def list_telefonos_proveedor():
+        telefonos = TelefonoProveedor.query.all()
+        return jsonify([t.to_dict() for t in telefonos])
+
+
+    @app.get("/api/telefonos_proveedor/<string:telefono>")
+    def get_telefono_proveedor(telefono):
+        t = TelefonoProveedor.query.get_or_404(telefono)
+        return jsonify(t.to_dict())
+
+
+    @app.patch("/api/telefonos_proveedor/<string:telefono>")
+    def update_telefono_proveedor(telefono):
+        if not request.is_json:
+            return jsonify(error="Se requiere JSON"), 415
+        t = TelefonoProveedor.query.get_or_404(telefono)
+        data = request.get_json() or {}
+        if "id_proveedor" in data and data["id_proveedor"]:
+            t.id_proveedor = data["id_proveedor"]
+        db.session.commit()
+        return jsonify(t.to_dict())
+
+
+    @app.delete("/api/telefonos_proveedor/<string:telefono>")
+    def delete_telefono_proveedor(telefono):
+        t = TelefonoProveedor.query.get_or_404(telefono)
+        db.session.delete(t)
+        db.session.commit()
+        return jsonify(ok=True)
+    
+
  
     
 
